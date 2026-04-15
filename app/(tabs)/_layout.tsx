@@ -1,5 +1,5 @@
-import { Tabs } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Tabs } from 'expo-router';
 import { useContext } from 'react';
 import { AppContext } from '../../context/AppContext';
 
@@ -10,9 +10,7 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerStyle: {
-          backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
-        },
+        headerStyle: { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF' },
         headerTintColor: isDarkMode ? '#FFFFFF' : '#000000',
         tabBarStyle: {
           backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
@@ -33,6 +31,14 @@ export default function TabLayout() {
         options={{
           title: 'Додати',
           tabBarIcon: ({ color }) => <MaterialCommunityIcons name="plus-circle" size={24} color={color} />,
+        }}
+      />
+      {/* ДОДАНО: Нова вкладка для постів/відгуків */}
+      <Tabs.Screen
+        name="posts"
+        options={{
+          title: 'Відгуки',
+          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="message-text" size={24} color={color} />,
         }}
       />
       <Tabs.Screen

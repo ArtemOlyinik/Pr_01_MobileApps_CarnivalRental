@@ -1,10 +1,13 @@
 import React, { useContext, useState } from 'react';
-import { StyleSheet, View, FlatList, TouchableOpacity, Text } from 'react-native';
-import { Dialog, Portal, Paragraph, Button, IconButton } from 'react-native-paper';
+// ДОДАНО: Імпорт Image
+import { useRouter } from 'expo-router';
+import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Button, Dialog, IconButton, Paragraph, Portal } from 'react-native-paper';
 import { AppContext, CostumeData } from '../../context/AppContext';
 
 export default function CatalogScreen() {
   const context = useContext(AppContext);
+  const router = useRouter();
   const isDarkMode = context?.isDarkMode || false;
   const costumesData = context?.costumesData || [];
   
@@ -34,6 +37,13 @@ export default function CatalogScreen() {
     setDetailsDialogVisible(true);
   };
 
+  const handleGoToDetails = () => {
+    setDetailsDialogVisible(false);
+    if (selectedCostume) {
+      router.push(`/costume/${selectedCostume.id}`);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -43,9 +53,16 @@ export default function CatalogScreen() {
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.card} onPress={() => handleOpenDetails(item)} activeOpacity={0.7}>
+            
+            {/* ВИПРАВЛЕНО: Відображаємо реальне фото, якщо воно є! */}
             <View style={styles.imagePlaceholder}>
-              <Text style={styles.imageText}>Фото</Text>
+              {item.imageUri ? (
+                <Image source={{ uri: item.imageUri }} style={{ width: '100%', height: '100%', borderRadius: 8 }} />
+              ) : (
+                <Text style={styles.imageText}>Фото</Text>
+              )}
             </View>
+
             <View style={styles.cardContent}>
               <Text style={styles.cardTitle}>{item.name}</Text>
               <Text style={styles.cardDescription}>Категорія: {item.category}</Text>
@@ -88,7 +105,8 @@ export default function CatalogScreen() {
               {selectedCostume?.description}
             </Paragraph>
           </Dialog.Content>
-          <Dialog.Actions>
+          <Dialog.Actions style={{ justifyContent: 'space-between' }}>
+            <Button onPress={handleGoToDetails} textColor="#34C759">Детальніше</Button>
             <Button onPress={() => setDetailsDialogVisible(false)} textColor="#007AFF">Закрити</Button>
           </Dialog.Actions>
         </Dialog>
@@ -98,57 +116,13 @@ export default function CatalogScreen() {
 }
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: isDarkMode ? '#121212' : '#F5F5F7',
-  },
-  listContainer: {
-    padding: 16,
-    gap: 16,
-  },
-  card: {
-    flexDirection: 'row',
-    backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
-    borderRadius: 12,
-    padding: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: isDarkMode ? 0.3 : 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    alignItems: 'center',
-  },
-  imagePlaceholder: {
-    width: 80,
-    height: 80,
-    backgroundColor: isDarkMode ? '#333333' : '#E5E5EA',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  imageText: {
-    color: isDarkMode ? '#AAAAAA' : '#8E8E93',
-    fontSize: 12,
-  },
-  cardContent: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: isDarkMode ? '#FFFFFF' : '#1C1C1E',
-    marginBottom: 4,
-  },
-  cardDescription: {
-    fontSize: 14,
-    color: isDarkMode ? '#AAAAAA' : '#8E8E93',
-    marginBottom: 8,
-  },
-  cardPrice: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: isDarkMode ? '#32D74B' : '#34C759',
-  },
+  container: { flex: 1, backgroundColor: isDarkMode ? '#121212' : '#F5F5F7' },
+  listContainer: { padding: 16, gap: 16 },
+  card: { flexDirection: 'row', backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF', borderRadius: 12, padding: 12, elevation: 3, alignItems: 'center' },
+  imagePlaceholder: { width: 80, height: 80, backgroundColor: isDarkMode ? '#333333' : '#E5E5EA', borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  imageText: { color: isDarkMode ? '#AAAAAA' : '#8E8E93', fontSize: 12 },
+  cardContent: { flex: 1, justifyContent: 'center' },
+  cardTitle: { fontSize: 16, fontWeight: 'bold', color: isDarkMode ? '#FFFFFF' : '#1C1C1E', marginBottom: 4 },
+  cardDescription: { fontSize: 14, color: isDarkMode ? '#AAAAAA' : '#8E8E93', marginBottom: 8 },
+  cardPrice: { fontSize: 15, fontWeight: '600', color: isDarkMode ? '#32D74B' : '#34C759' },
 });

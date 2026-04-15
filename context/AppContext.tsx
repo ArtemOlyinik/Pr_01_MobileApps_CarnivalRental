@@ -6,13 +6,14 @@ export interface CostumeData {
   category: string;
   price: string;
   description: string;
+  imageUri?: string | null;
 }
 
 interface AppContextType {
   costumesData: CostumeData[];
   setCostumesData: React.Dispatch<React.SetStateAction<CostumeData[]>>;
   isAuthenticated: boolean;
-  login: (user: string, pass: string) => Promise<boolean>;
+  login: (user: string, pass: string) => Promise<{success: boolean, message: string}>;
   logout: () => void;
   userName: string;
   setUserName: React.Dispatch<React.SetStateAction<string>>;
@@ -22,10 +23,12 @@ interface AppContextType {
   toggleNotifications: () => void;
   newsletterEnabled: boolean;
   toggleNewsletter: () => void;
+  // ДОДАНО: функція для збереження фото
+  updateCostumeImage: (id: string, uri: string | null) => void; 
 }
 
 const generateDescription = (i: number, category: string) => {
-  return `Це чудовий карнавальний костюм номер ${i + 1}. Ідеально підходить для тематичних вечірок, святкувань Хелловіну або новорічних корпоративів. Матеріал високої якості, дуже зручний. Категорія: ${category}.`;
+  return `Це чудовий карнавальний костюм номер ${i + 1}. Ідеально підходить для тематичних вечірок. Категорія: ${category}.`;
 };
 
 const initialCostumes: CostumeData[] = Array.from({ length: 20 }, (_, i) => {
@@ -33,9 +36,10 @@ const initialCostumes: CostumeData[] = Array.from({ length: 20 }, (_, i) => {
   return {
     id: String(i + 1),
     name: `Карнавальний костюм #${i + 1}`,
-    category: category,
+    category,
     price: `${(i + 1) * 150} грн/доба`,
     description: generateDescription(i, category),
+    // imageUri поки що немає
   };
 });
 
@@ -53,34 +57,40 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const toggleNotifications = () => setNotificationsEnabled(prev => !prev);
   const toggleNewsletter = () => setNewsletterEnabled(prev => !prev);
 
-  const login = async (user: string, pass: string): Promise<boolean> => {
+  // ДОДАНО: Функція, яка знаходить костюм по ID і оновлює йому фото
+  const updateCostumeImage = (id: string, uri: string | null) => {
+    setCostumesData(prevData => 
+      prevData.map(costume => 
+        costume.id === id ? { ...costume, imageUri: uri } : costume
+      )
+    );
+  };
+
+  const login = async (user: string, pass: string): Promise<{success: boolean, message: string}> => {
     try {
-      const response = await fetch('https://reqres.in/api/login', {
+      const response = await fetch('https://dummyjson.com/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: user,
-          password: pass,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user, password: pass, expiresInMins: 30 }),
       });
-
-      const data = await response.json();
-
-      if (response.ok && data.token) {
-        setIsAuthenticated(true);
-        // Використовуємо частину email до символу @ як ім'я
-        const nameFromEmail = user.split('@')[0];
-        setUserName(nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1));
-        return true;
+      const responseText = await response.text();
+      if (response.ok) {
+        try {
+          const data = JSON.parse(responseText);
+          if (data.accessToken || data.token) {
+            setIsAuthenticated(true);
+            setUserName(`${data.firstName} ${data.lastName}`);
+            return { success: true, message: 'OK' };
+          }
+          return { success: false, message: 'Помилка: Сервер не повернув токен доступу.' };
+        } catch (e) { return { success: false, message: 'Помилка читання JSON від сервера.' }; }
       } else {
-        return false;
+        try {
+          const errData = JSON.parse(responseText);
+          return { success: false, message: errData.message || `Помилка API. Статус: ${response.status}` };
+        } catch (e) { return { success: false, message: `Помилка API. Статус: ${response.status}` }; }
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      return false;
-    }
+    } catch (error: any) { return { success: false, message: `Помилка мережі: ${error.message}` }; }
   };
 
   const logout = () => {
@@ -91,19 +101,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AppContext.Provider
       value={{
-        costumesData,
-        setCostumesData,
-        isAuthenticated,
-        login,
-        logout,
-        userName,
-        setUserName,
-        isDarkMode,
-        toggleTheme,
-        notificationsEnabled,
-        toggleNotifications,
-        newsletterEnabled,
-        toggleNewsletter,
+        costumesData, setCostumesData,
+        isAuthenticated, login, logout,
+        userName, setUserName,
+        isDarkMode, toggleTheme,
+        notificationsEnabled, toggleNotifications,
+        newsletterEnabled, toggleNewsletter,
+        updateCostumeImage, // Передаємо функцію вниз
       }}
     >
       {children}
