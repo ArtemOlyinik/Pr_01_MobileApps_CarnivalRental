@@ -1,52 +1,51 @@
-import { Stack, useRouter, useSegments } from "expo-router";
-import { useContext, useEffect, useState } from "react";
-import { Provider as PaperProvider } from 'react-native-paper';
-import { AppContext, AppProvider } from "../context/AppContext";
-// ДОДАНО: Імпорти для React Query
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Stack, useRootNavigationState, useRouter, useSegments } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { PaperProvider } from 'react-native-paper';
+import { useStore } from '../store/useStore';
 
-// ДОДАНО: Створюємо клієнт для кешування
 const queryClient = new QueryClient();
 
-function RootNavigator() {
-  const context = useContext(AppContext);
-  const router = useRouter();
+export default function RootLayout() {
+  const isAuthenticated = useStore((state) => state.isAuthenticated);
   const segments = useSegments();
-  const [isNavigationReady, setIsNavigationReady] = useState(false);
+  const router = useRouter();
+  const navigationState = useRootNavigationState();
+  
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsNavigationReady(true);
+    setIsMounted(true);
   }, []);
 
   useEffect(() => {
-    if (!context || !isNavigationReady) return;
+    if (!isMounted || !navigationState?.key) return;
 
-    const inAuthGroup = (segments[0] as string) === 'login';
+    const inAuthScreen = segments[0] === 'login';
 
-    if (!context.isAuthenticated && !inAuthGroup) {
-      router.replace('/login' as any);
-    } else if (context.isAuthenticated && inAuthGroup) {
-      router.replace('/(tabs)' as any);
-    }
-  }, [context?.isAuthenticated, segments, isNavigationReady]);
+    const timeout = setTimeout(() => {
+      if (!isAuthenticated && !inAuthScreen) {
+        router.replace('/login');
+      } else if (isAuthenticated) {
+        // ВИПРАВЛЕНО: Замість segments.length === 0 перевіряємо відсутність першого сегмента
+        if (inAuthScreen || !segments[0]) {
+          router.replace('/(tabs)');
+        }
+      }
+    }, 1);
+
+    return () => clearTimeout(timeout);
+  }, [isAuthenticated, segments, navigationState?.key, isMounted]);
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="login" options={{ animation: 'fade' }} />
-      <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-    </Stack>
-  );
-}
-
-export default function RootLayout() {
-  return (
-    // ДОДАНО: Обгортка QueryClientProvider
     <QueryClientProvider client={queryClient}>
-      <AppProvider>
-        <PaperProvider>
-          <RootNavigator />
-        </PaperProvider>
-      </AppProvider>
+      <PaperProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="login" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="costume/[id]" options={{ headerShown: true, title: 'Деталі' }} />
+        </Stack>
+      </PaperProvider>
     </QueryClientProvider>
   );
 }

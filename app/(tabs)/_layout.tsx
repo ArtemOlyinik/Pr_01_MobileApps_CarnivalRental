@@ -1,51 +1,54 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons'; // Додаємо іконки
 import { Tabs } from 'expo-router';
-import { useContext } from 'react';
-import { AppContext } from '../../context/AppContext';
+import { useStore } from '../../store/useStore';
 
-export default function TabLayout() {
-  const context = useContext(AppContext);
-  const isDarkMode = context?.isDarkMode || false;
+export default function TabsLayout() {
+  const isDarkMode = useStore((state) => state.isDarkMode);
 
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF' },
-        headerTintColor: isDarkMode ? '#FFFFFF' : '#000000',
+        headerShown: true,
         tabBarStyle: {
           backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
-          borderTopColor: isDarkMode ? '#333333' : '#E0E0E0',
+          borderTopColor: isDarkMode ? '#333333' : '#E5E5EA',
         },
         tabBarActiveTintColor: '#007AFF',
-        tabBarInactiveTintColor: isDarkMode ? '#888888' : '#8E8E93',
-      }}>
+        tabBarInactiveTintColor: isDarkMode ? '#AAAAAA' : '#8E8E93',
+        headerStyle: {
+          backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
+        },
+        headerTintColor: isDarkMode ? '#FFFFFF' : '#000000',
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Каталог',
-          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="hanger" size={24} color={color} />,
+          tabBarLabel: 'Каталог',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="list" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="add"
         options={{
           title: 'Додати',
-          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="plus-circle" size={24} color={color} />,
-        }}
-      />
-      {/* ДОДАНО: Нова вкладка для постів/відгуків */}
-      <Tabs.Screen
-        name="posts"
-        options={{
-          title: 'Відгуки',
-          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="message-text" size={24} color={color} />,
+          tabBarLabel: 'Додати',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="add-circle-outline" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: 'Налаштування',
-          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="cog" size={24} color={color} />,
+          tabBarLabel: 'Налаштування',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings-outline" size={size} color={color} />
+          ),
         }}
       />
     </Tabs>

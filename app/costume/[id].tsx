@@ -1,102 +1,76 @@
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import React, { useContext } from 'react';
+import React from 'react';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button } from 'react-native-paper';
-import { AppContext } from '../../context/AppContext';
+import { useStore } from '../../store/useStore';
 
-export default function CostumeDetailsScreen() {
+export default function CostumeDetails() {
   const { id } = useLocalSearchParams();
-  const context = useContext(AppContext);
-  const isDarkMode = context?.isDarkMode || false;
+  const { costumesData, updateCostumeImage, isDarkMode } = useStore();
 
-  const costume = context?.costumesData.find(c => c.id === id);
+  const costume = costumesData.find(c => c.id === id);
   const styles = getStyles(isDarkMode);
-
-  const pickImage = async () => {
-    const currentPermission = await ImagePicker.getMediaLibraryPermissionsAsync();
-    
-    if (!currentPermission.granted) {
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (permissionResult.granted === false) {
-        alert("Потрібен дозвіл на доступ до галереї!");
-        return;
-      }
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      // ВИПРАВЛЕНО: Використовуємо новий стандарт запису замість застарілого MediaTypeOptions
-      mediaTypes: ['images'], 
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.7, 
-    });
-
-    if (!result.canceled && context) {
-      context.updateCostumeImage(id as string, result.assets[0].uri);
-    }
-  };
-
-  const removeImage = () => {
-    if (context) {
-      context.updateCostumeImage(id as string, null);
-    }
-  };
 
   if (!costume) {
     return (
-      <View style={styles.centerContainer}>
+      <View style={styles.container}>
         <Text style={styles.errorText}>Костюм не знайдено</Text>
       </View>
     );
   }
 
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Вибачте, потрібен дозвіл на доступ до галереї!');
+      return;
+    }
+
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.5,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      updateCostumeImage(costume.id, result.assets[0].uri);
+    }
+  };
+
+  const removeImage = () => {
+    updateCostumeImage(costume.id, null);
+  };
+
   return (
-    <ScrollView style={styles.container}>
-      <Stack.Screen options={{ title: costume.name, headerBackTitle: "Назад", headerShown: true }} />
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <Stack.Screen options={{ headerShown: true, title: costume.name, headerStyle: { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF' }, headerTintColor: isDarkMode ? '#FFFFFF' : '#000000' }} />
 
-      <View style={styles.content}>
-        
-        {costume.imageUri ? (
-          <View style={styles.imageContainer}>
-            <Image source={{ uri: costume.imageUri }} style={styles.image} />
-            <Button 
-              mode="outlined" 
-              icon="delete" 
-              textColor="#FF3B30" 
-              style={{ borderColor: '#FF3B30', marginTop: 12 }}
-              onPress={removeImage}
-            >
-              Відкріпити фото
-            </Button>
-          </View>
-        ) : (
-          <View style={styles.imageContainer}>
-            <View style={styles.imagePlaceholder}>
-              <Text style={styles.imageText}>Фото не прикріплено</Text>
-            </View>
-            <Button 
-              mode="contained" 
-              icon="camera-image" 
-              buttonColor="#007AFF"
-              style={{ marginTop: 12 }}
-              onPress={pickImage}
-            >
-              Прикріпити фото з галереї
-            </Button>
-          </View>
-        )}
-
-        <View style={styles.infoContainer}>
-          <Text style={styles.title}>{costume.name}</Text>
-          <Text style={styles.category}>Категорія: {costume.category}</Text>
-          <Text style={styles.price}>{costume.price}</Text>
-
-          <View style={styles.divider} />
-
-          <Text style={styles.sectionTitle}>Опис:</Text>
-          <Text style={styles.description}>{costume.description}</Text>
+      {costume.imageUri ? (
+        <Image source={{ uri: costume.imageUri }} style={styles.image} />
+      ) : (
+        <View style={styles.imagePlaceholder}>
+          <Text style={styles.placeholderText}>Немає фото</Text>
         </View>
+      )}
+
+      <View style={styles.buttonContainer}>
+        <Button mode="contained" onPress={pickImage} style={styles.button} buttonColor="#007AFF">
+          Прикріпити фото з галереї
+        </Button>
+        {costume.imageUri && (
+          <Button mode="outlined" onPress={removeImage} style={[styles.button, { borderColor: '#FF3B30' }]} textColor="#FF3B30">
+            Відкріпити фото
+          </Button>
+        )}
+      </View>
+
+      <View style={styles.infoCard}>
+        <Text style={styles.title}>{costume.name}</Text>
+        <Text style={styles.category}>Категорія: {costume.category}</Text>
+        <Text style={styles.price}>{costume.price}</Text>
+        <Text style={styles.description}>{costume.description}</Text>
       </View>
     </ScrollView>
   );
@@ -104,18 +78,16 @@ export default function CostumeDetailsScreen() {
 
 const getStyles = (isDarkMode: boolean) => StyleSheet.create({
   container: { flex: 1, backgroundColor: isDarkMode ? '#121212' : '#F5F5F7' },
-  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: isDarkMode ? '#121212' : '#F5F5F7' },
-  errorText: { color: isDarkMode ? '#FFFFFF' : '#000000', fontSize: 18 },
-  content: { padding: 24 },
-  imageContainer: { marginBottom: 24, alignItems: 'center' },
-  imagePlaceholder: { width: '100%', height: 250, backgroundColor: isDarkMode ? '#333333' : '#E5E5EA', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  image: { width: '100%', height: 250, borderRadius: 12 },
-  imageText: { color: isDarkMode ? '#AAAAAA' : '#8E8E93', fontSize: 16 },
-  infoContainer: { marginTop: 8 },
-  title: { fontSize: 26, fontWeight: 'bold', color: isDarkMode ? '#FFFFFF' : '#1C1C1E', marginBottom: 8 },
-  category: { fontSize: 16, color: isDarkMode ? '#AAAAAA' : '#666666', marginBottom: 8 },
-  price: { fontSize: 22, fontWeight: 'bold', color: isDarkMode ? '#32D74B' : '#34C759', marginBottom: 24 },
-  divider: { height: 1, backgroundColor: isDarkMode ? '#333333' : '#E0E0E0', marginBottom: 24 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: isDarkMode ? '#FFFFFF' : '#1C1C1E', marginBottom: 8 },
-  description: { fontSize: 16, color: isDarkMode ? '#DDDDDD' : '#333333', lineHeight: 24 },
+  content: { padding: 16 },
+  errorText: { color: isDarkMode ? '#FFF' : '#000', textAlign: 'center', marginTop: 50 },
+  image: { width: '100%', height: 250, borderRadius: 12, marginBottom: 16 },
+  imagePlaceholder: { width: '100%', height: 250, backgroundColor: isDarkMode ? '#333333' : '#E5E5EA', borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  placeholderText: { color: isDarkMode ? '#AAAAAA' : '#8E8E93', fontSize: 16 },
+  buttonContainer: { gap: 12, marginBottom: 24 },
+  button: { paddingVertical: 6 },
+  infoCard: { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF', padding: 20, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: isDarkMode ? 0.3 : 0.1, shadowRadius: 4, elevation: 3 },
+  title: { fontSize: 24, fontWeight: 'bold', color: isDarkMode ? '#FFFFFF' : '#1C1C1E', marginBottom: 8 },
+  category: { fontSize: 16, color: isDarkMode ? '#AAAAAA' : '#8E8E93', marginBottom: 12 },
+  price: { fontSize: 20, fontWeight: 'bold', color: isDarkMode ? '#32D74B' : '#34C759', marginBottom: 16 },
+  description: { fontSize: 16, color: isDarkMode ? '#DDDDDD' : '#333333', lineHeight: 24 }
 });
