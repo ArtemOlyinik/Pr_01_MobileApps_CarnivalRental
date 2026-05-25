@@ -48,32 +48,34 @@ const AnimatedListItem = ({ item, index, isDarkMode, styles, onPress, onConfirmD
   };
 
   return (
-    <Animated.View entering={FadeInDown.delay(index * 100)} style={scrollStyle}>
-      <Swipeable renderRightActions={renderRightActions}>
-        <AnimatedTouchableOpacity 
-          style={[styles.card, animatedStyle]} 
-          onPress={onPress}
-          onPressIn={() => {
-            scale.value = withSpring(0.95);
-          }}
-          onPressOut={() => {
-            scale.value = withSpring(1);
-          }}
-        >
-          {item.imageUri ? (
-            <Animated.Image sharedTransitionTag={`image-${item.id}`} source={{ uri: item.imageUri }} style={styles.image} />
-          ) : (
-            <Animated.View sharedTransitionTag={`image-${item.id}`} style={styles.imagePlaceholder}>
-              <Text style={styles.imageText}>Фото</Text>
-            </Animated.View>
-          )}
-          <View style={styles.cardContent}>
-            <Text style={styles.cardTitle}>{item.name}</Text>
-            <Text style={styles.cardDescription}>Категорія: {item.category}</Text>
-            <Text style={styles.cardPrice}>{item.price}</Text>
-          </View>
-        </AnimatedTouchableOpacity>
-      </Swipeable>
+    <Animated.View entering={FadeInDown.delay(index * 100)}>
+      <Animated.View style={scrollStyle}>
+        <Swipeable renderRightActions={renderRightActions}>
+          <AnimatedTouchableOpacity 
+            style={[styles.card, animatedStyle]} 
+            onPress={onPress}
+            onPressIn={() => {
+              scale.value = withSpring(0.95);
+            }}
+            onPressOut={() => {
+              scale.value = withSpring(1);
+            }}
+          >
+            {item.imageUri ? (
+              <Animated.Image sharedTransitionTag={`image-${item.id}`} source={{ uri: item.imageUri }} style={styles.image} />
+            ) : (
+              <Animated.View sharedTransitionTag={`image-${item.id}`} style={styles.imagePlaceholder}>
+                <Text style={styles.imageText}>Фото</Text>
+              </Animated.View>
+            )}
+            <View style={styles.cardContent}>
+              <Text style={styles.cardTitle}>{item.name}</Text>
+              <Text style={styles.cardDescription}>Категорія: {item.category}</Text>
+              <Text style={styles.cardPrice}>{item.price}</Text>
+            </View>
+          </AnimatedTouchableOpacity>
+        </Swipeable>
+      </Animated.View>
     </Animated.View>
   );
 };
