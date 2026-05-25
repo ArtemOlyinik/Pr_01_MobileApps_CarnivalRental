@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import { Appbar, Button, Dialog, Paragraph, Text, TextInput } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useStore } from '../store/useStore'; // Підключаємо Zustand
 
 export default function LoginScreen() {
@@ -13,6 +15,25 @@ export default function LoginScreen() {
   const [errorVisible, setErrorVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const logoScale = useSharedValue(0.8);
+
+  useEffect(() => {
+    logoScale.value = withRepeat(
+      withSequence(
+        withTiming(1.1, { duration: 1000 }),
+        withTiming(1, { duration: 1000 })
+      ),
+      -1, // repeat forever
+      true // reverse
+    );
+  }, []);
+
+  const animatedLogoStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: logoScale.value }],
+    };
+  });
 
   const styles = getStyles(isDarkMode);
 
@@ -35,7 +56,10 @@ export default function LoginScreen() {
       </Appbar.Header>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
         <View style={styles.formContainer}>
-          <Text style={styles.title}>Вітаємо у Carnival Rentals!</Text>
+          <Animated.View style={[{ alignItems: 'center', marginBottom: 20 }, animatedLogoStyle]}>
+            <MaterialCommunityIcons name="theater" size={64} color="#007AFF" />
+          </Animated.View>
+          <Animated.Text entering={FadeInDown.duration(800)} style={styles.title}>Вітаємо у Carnival Rentals!</Animated.Text>
           <Text style={styles.subtitle}>Будь ласка, увійдіть (emilys / emilyspass)</Text>
 
           <TextInput

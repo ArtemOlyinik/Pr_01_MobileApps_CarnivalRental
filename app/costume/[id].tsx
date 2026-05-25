@@ -2,6 +2,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { Button } from 'react-native-paper';
 import { useStore } from '../../store/useStore';
 
@@ -48,11 +49,11 @@ export default function CostumeDetails() {
       <Stack.Screen options={{ headerShown: true, title: costume.name, headerStyle: { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF' }, headerTintColor: isDarkMode ? '#FFFFFF' : '#000000' }} />
 
       {costume.imageUri ? (
-        <Image source={{ uri: costume.imageUri }} style={styles.image} />
+        <Animated.Image sharedTransitionTag={`image-${costume.id}`} source={{ uri: costume.imageUri }} style={styles.image} />
       ) : (
-        <View style={styles.imagePlaceholder}>
+        <Animated.View sharedTransitionTag={`image-${costume.id}`} style={styles.imagePlaceholder}>
           <Text style={styles.placeholderText}>Немає фото</Text>
-        </View>
+        </Animated.View>
       )}
 
       <View style={styles.buttonContainer}>

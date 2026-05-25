@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import { Button, Checkbox, Switch, Text, TextInput } from 'react-native-paper';
+import Animated, { interpolateColor, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useStore } from '../../store/useStore';
 
+const AnimatedKeyboardAvoidingView = Animated.createAnimatedComponent(KeyboardAvoidingView);
+
 export default function SettingsScreen() {
-  // Витягуємо всі функції налаштувань із Zustand
   const {
     isDarkMode, toggleTheme,
     userName, setUserName,
@@ -16,8 +18,27 @@ export default function SettingsScreen() {
 
   const styles = getStyles(isDarkMode);
 
+  // Animated background value
+  const themeProgress = useSharedValue(isDarkMode ? 1 : 0);
+
+  useEffect(() => {
+    themeProgress.value = withTiming(isDarkMode ? 1 : 0, { duration: 500 });
+  }, [isDarkMode]);
+
+  // We can't directly animate interpolateColor in some environments without useDerivedValue, 
+  // but Reanimated 3 supports it natively in useAnimatedStyle.
+  const animatedBgStyle = useAnimatedStyle(() => {
+    return {
+      backgroundColor: interpolateColor(
+        themeProgress.value,
+        [0, 1],
+        ['#F5F5F7', '#121212']
+      )
+    };
+  });
+
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
+    <AnimatedKeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={[styles.container, animatedBgStyle]}>
       <Text style={styles.settingsTitle}>Налаштування додатку</Text>
 
       <TextInput
@@ -42,7 +63,6 @@ export default function SettingsScreen() {
         <Switch value={notificationsEnabled} onValueChange={toggleNotifications} color="#34C759" />
       </View>
 
-      {/* Перемикач для Практичної №5 (Пункт 4) */}
       <View style={styles.settingItem}>
         <Text style={styles.settingText}>Тільки поточна сесія (не зберігати)</Text>
         <Switch value={isSessionOnly} onValueChange={toggleSessionOnly} color="#007AFF" />
@@ -56,7 +76,7 @@ export default function SettingsScreen() {
       <Button mode="contained" onPress={logout} buttonColor="#FF3B30" style={{ marginTop: 24 }}>
         Вийти з акаунта
       </Button>
-    </KeyboardAvoidingView>
+    </AnimatedKeyboardAvoidingView>
   );
 }
 
